@@ -10,7 +10,7 @@ public class DBConnect {
 	private static String username;
 	private static String password;
 	
-	public static Connection getConnection() {
+	public Connection getConnection() {
 		
 		try {
 			driver = "com.mysql.cj.jdbc.Driver";
