@@ -19,6 +19,7 @@ import java.sql.Statement;
 import java.awt.event.ActionEvent;
 import javax.swing.JPasswordField;
 
+@SuppressWarnings("serial")
 public class Login extends JFrame {
 
 	private JPanel contentPane;
@@ -91,12 +92,15 @@ public class Login extends JFrame {
 					ResultSet results = stmt.executeQuery();
 					
 					if(results.next()) {
+						int account_id = results.getInt(1);
 						System.out.println("Logged in!");
+						dispose();
+						StudentDashboard frame = new StudentDashboard(account_id);
+						frame.setVisible(true);
+						results.close();
+						stmt.close();
 					}
-					else System.out.println("Invalid user or pass!");
-					
-					stmt.close();
-					results.close();
+					else System.out.println("Invalid user or pass!");								
 				}
 				catch(Exception ex) {
 					System.out.println(ex);
