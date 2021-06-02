@@ -1,8 +1,5 @@
 package com.srms;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Subject {
 	private String name;
 	private String code;
@@ -27,6 +24,12 @@ public class Subject {
 
 	public void setCode(String code) {
 		this.code = code;
+	}
+
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return name;
 	}
 	
 	

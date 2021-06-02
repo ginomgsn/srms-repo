@@ -171,7 +171,13 @@ public class StudentDashboard extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// Show Subjects
-				//SubjectsWindow subjectsWindow = new SubjectsWindow();
+				try {
+					SubjectsWindow subjectsWindow = new SubjectsWindow(account_id);
+					subjectsWindow.setVisible(true);
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			}
 			
 		});
