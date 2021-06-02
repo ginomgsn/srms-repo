@@ -11,6 +11,8 @@ import java.awt.Font;
 import javax.swing.SwingConstants;
 import javax.swing.JScrollPane;
 import java.awt.ScrollPane;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.JButton;
 
 @SuppressWarnings("serial")
 public class StudentDashboard extends JFrame {
@@ -26,10 +29,9 @@ public class StudentDashboard extends JFrame {
 	private JPanel contentPane;
 	private JTable table;
 	private int account_id;
-	private DBConnect con = new DBConnect();
-	private String name;
-	private String firstname;
-	private String section;
+	private DBConnect db = new DBConnect();
+	private Connection con = db.getConnection(); 
+	private String firstname, section, lastname, contact, course, department;
 	private ArrayList<Subject> subjects = new ArrayList<Subject>();
 	/**
 	 * Launch the application.
@@ -42,25 +44,29 @@ public class StudentDashboard extends JFrame {
 		this.account_id = account_id;
 		
 		//Get Student Information using Account ID
-		String query = "SELECT * FROM students WHERE student_id=?;";
-		PreparedStatement stmt = con.getConnection().prepareStatement(query);
+		String query = "SELECT *, course.course_name, department.department_name \r\n"
+				+ "	FROM ((student INNER JOIN course ON course.course_id=student.course_id)\r\n"
+				+ "    INNER JOIN department ON course.department_id=department.department_id)\r\n"
+				+ "    WHERE student_id=?;";
+		PreparedStatement stmt = con.prepareStatement(query);
 		stmt.setInt(1, account_id);
 		ResultSet results = stmt.executeQuery();
 		
 		if (results.next()) {
-			name = results.getString(2);
-			section = results.getString(3);
+			firstname = results.getString(2);
+			lastname = results.getString(3);
+			section = results.getString(4);
+			contact = results.getString(5);
+			course = results.getString(8);
+			department = results.getString(11);
 		}
 		
-		//Get First name for Welcome Message
-		firstname = name.contains(" ") ? name.split(" ")[0] : name;
-		
 		//Get Student Subjects ID
-		String subjects_query = "SELECT subjects.subject_code, subjects.subject_name "
-				+ "FROM subjects INNER JOIN student_subjects "
-				+ "ON subjects.subject_id=student_subjects.subject_id "
-				+ "WHERE student_subjects.student_id=?;";
-		PreparedStatement subjects_stmt = con.getConnection().prepareStatement(subjects_query);
+		String subjects_query = "SELECT subject.subject_code, subject.subject_name "
+				+ "FROM subject INNER JOIN student_subject "
+				+ "ON subject.subject_id=student_subject.subject_id "
+				+ "WHERE student_subject.student_id=?;";
+		PreparedStatement subjects_stmt = con.prepareStatement(subjects_query);
 		subjects_stmt.setInt(1, account_id);
 		ResultSet subjects_results = subjects_stmt.executeQuery();
 		
@@ -72,26 +78,35 @@ public class StudentDashboard extends JFrame {
 		}
 		
 		Object columns[] = {"Subject Code", "Subject Name"};
-		Object rows[][] = new Object[subjects.size()][2];
+		Object rows[][];
+		
 		
 		if (subjects.size() > 0) {
+			rows = new Object[subjects.size()][2];
+			
 			int i = 0;
 			for (Subject subject: subjects) {
 				rows[i][0] = subject.getCode();
 				rows[i][1] = subject.getName();
 				i++;
 			}
+			
+			table = new JTable(rows, columns);
+		}
+		else {
+			rows = new Object[0][2];
+			table = new JTable(rows, columns);
 		}
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 624, 362);
+		setBounds(100, 100, 624, 439);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
 		JLabel lblWelcome = new JLabel("Hi " + firstname + "!");
-		lblWelcome.setBounds(10, 11, 93, 22);
+		lblWelcome.setBounds(10, 11, 258, 22);
 		lblWelcome.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		contentPane.add(lblWelcome);
 		
@@ -103,34 +118,72 @@ public class StudentDashboard extends JFrame {
 		lblNewLabel_2.setBounds(10, 69, 46, 14);
 		contentPane.add(lblNewLabel_2);
 		
-		JLabel lblName = new JLabel(name);
-		lblName.setBounds(57, 44, 185, 14);
+		JLabel lblName = new JLabel(firstname + " " + lastname);
+		lblName.setBounds(79, 44, 189, 14);
 		contentPane.add(lblName);
 		
 		JLabel lblNewLabel = new JLabel(section);
-		lblNewLabel.setBounds(66, 69, 176, 14);
+		lblNewLabel.setBounds(79, 69, 154, 14);
 		contentPane.add(lblNewLabel);
 		
+		JLabel lblNewLabel_4 = new JLabel("Course:");
+		lblNewLabel_4.setBounds(10, 94, 46, 14);
+		contentPane.add(lblNewLabel_4);
+		
 		JLabel lblNewLabel_3 = new JLabel("Subjects");
-		lblNewLabel_3.setBounds(10, 94, 588, 14);
+		lblNewLabel_3.setBounds(10, 159, 588, 14);
 		lblNewLabel_3.setHorizontalAlignment(SwingConstants.CENTER);
 		contentPane.add(lblNewLabel_3);
 		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 119, 588, 151);
+		scrollPane.setBounds(10, 184, 588, 151);
 		contentPane.add(scrollPane);
-		
-		
-		table = new JTable(rows, columns);{
-			
-		}
-		
 		
 		table.setRequestFocusEnabled(false);
 		table.setFocusable(false);
 		table.setRowSelectionAllowed(false);
 		table.setFillsViewportHeight(true);
 		scrollPane.setViewportView(table);
+		
+		JLabel lblCourse = new JLabel(course);
+		lblCourse.setBounds(79, 94, 236, 14);
+		contentPane.add(lblCourse);
+		
+		JLabel lblNewLabel_5 = new JLabel("Contact #:");
+		lblNewLabel_5.setBounds(10, 119, 71, 14);
+		contentPane.add(lblNewLabel_5);
+		
+		JLabel lblContact = new JLabel(contact);
+		lblContact.setBounds(79, 119, 154, 14);
+		contentPane.add(lblContact);
+		
+		JButton btnAddSubject = new JButton("Add Subject");
+		btnAddSubject.setBounds(10, 367, 112, 23);
+		contentPane.add(btnAddSubject);
+		
+		JButton btnLogOut = new JButton("Logout");
+		btnLogOut.setBounds(509, 367, 89, 23);
+		contentPane.add(btnLogOut);
+		
+		// Set Button Function
+		btnAddSubject.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// Show Subjects
+				//SubjectsWindow subjectsWindow = new SubjectsWindow();
+			}
+			
+		});
+		
+		btnLogOut.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				dispose();
+			}
+			
+		});
 		
 		table.getColumnModel().getColumn(0).setPreferredWidth(100);
 		table.getColumnModel().getColumn(0).setMinWidth(100);

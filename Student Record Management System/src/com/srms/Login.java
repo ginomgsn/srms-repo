@@ -85,7 +85,7 @@ public class Login extends JFrame {
 				password = pfPassword.getText();
 				
 				try {
-					String query = "SELECT * FROM accounts WHERE account_username=? and account_password=?;";
+					String query = "SELECT * FROM account WHERE account_username=? and account_password=?;";
 					PreparedStatement stmt = con.getConnection().prepareStatement(query);
 					stmt.setString(1, username);
 					stmt.setString(2, password);
