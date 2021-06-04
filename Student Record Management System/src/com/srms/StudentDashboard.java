@@ -174,6 +174,7 @@ public class StudentDashboard extends JFrame {
 				try {
 					SubjectsWindow subjectsWindow = new SubjectsWindow(account_id);
 					subjectsWindow.setVisible(true);
+					dispose();
 				} catch (SQLException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
