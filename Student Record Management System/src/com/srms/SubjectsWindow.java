@@ -6,12 +6,17 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
 import java.awt.GridLayout;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.swing.JLabel;
@@ -28,9 +33,13 @@ import java.awt.event.ActionEvent;
 public class SubjectsWindow extends JFrame {
 
 	private JPanel contentPane;
-	JList<Subject> available_subjects;
+	static ArrayList<Subject> subjects = new ArrayList<>();
+	JList<Subject> subjectList;
 	private DBConnect db = new DBConnect();
 	private Connection con = db.getConnection();
+	String timeStart;
+	String timeEnd;
+	String day;
 
 	/**
 	 * Create the frame.
@@ -49,23 +58,28 @@ public class SubjectsWindow extends JFrame {
 		lblNewLabel.setBounds(10, 44, 414, 14);
 		contentPane.add(lblNewLabel);
 		
-		JButton btnConfirm = new JButton("Confirm");
-		btnConfirm.addActionListener(new ActionListener() {
+		JButton btnAddSubject = new JButton("Add Subject");
+		btnAddSubject.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
-				List<Subject> selected_subjects = available_subjects.getSelectedValuesList();
-				
-				
+
 					try {
-						for(Subject subject: selected_subjects) {
-							String insert_query = "INSERT INTO student_subject(subject_id, student_id) \r\n"
-							+ "	VALUES ((SELECT subject_id FROM subject WHERE subject_code=?), ?);";
-							PreparedStatement inset_stmt = con.prepareStatement(insert_query);
-							inset_stmt.setString(1, subject.getCode());
-							inset_stmt.setInt(2, account_id);
-							inset_stmt.executeUpdate();
-						}
-						
+							String insert_query = "INSERT INTO student_subject(student_id, subject_schedule_id) VALUES (1, \r\n"
+									+ "	(SELECT subject_schedule.subject_schedule_id FROM subject_schedule \r\n"
+									+ "	INNER JOIN subject ON subject_schedule.subject_id=subject.subject_id\r\n"
+									+ "	INNER JOIN schedule ON subject_schedule.schedule_id=schedule.schedule_id\r\n"
+									+ "        WHERE subject.subject_code=?\r\n"
+									+ "        AND schedule.schedule_time_start=?\r\n"
+									+ "        AND schedule.schedule_time_end=?\r\n"
+									+ "        AND schedule.schedule_day=?));";
+							PreparedStatement insert_stmt = con.prepareStatement(insert_query);
+							insert_stmt.setString(1, subjectList.getSelectedValue().getCode());
+							insert_stmt.setString(2, timeStart);
+							insert_stmt.setString(3, timeEnd);
+							insert_stmt.setString(4, day);
+							insert_stmt.executeUpdate();
+							
+							insert_stmt.close();
+		
 						// Reload Student Dash board and dispose
 						
 						StudentDashboard dashboard = new StudentDashboard(account_id);
@@ -77,8 +91,8 @@ public class SubjectsWindow extends JFrame {
 					}		
 			}
 		});
-		btnConfirm.setBounds(10, 247, 89, 23);
-		contentPane.add(btnConfirm);
+		btnAddSubject.setBounds(10, 247, 117, 23);
+		contentPane.add(btnAddSubject);
 		
 		JButton btnCancel = new JButton("Cancel");
 		btnCancel.addActionListener(new ActionListener() {
@@ -103,8 +117,10 @@ public class SubjectsWindow extends JFrame {
 	
 	private void showAvailableSubjects(int account_id) throws SQLException {
 		// JList Components
-				available_subjects = new JList<Subject>();
-				DefaultListModel<Subject> model = new DefaultListModel<>();
+				subjectList = new JList<Subject>();
+				DefaultListModel<Subject> subjectModel = new DefaultListModel<>();
+				
+				// TODO fix this subject view
 				
 				// Populate list using database
 				String query = "SELECT subject.subject_code, subject.subject_name FROM subject\r\n"
@@ -121,18 +137,80 @@ public class SubjectsWindow extends JFrame {
 					String subject_code = subjects_results.getString(1);
 					String subject_name = subjects_results.getString(2);
 					
-					model.addElement(new Subject(subject_name, subject_code));
+					subjectModel.addElement(new Subject(subject_name, subject_code));
 				}
 				
-				available_subjects.setModel(model);
-				available_subjects.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+				subjectList.setModel(subjectModel);
+				subjectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 				
 				subjects_results.close();
 				subjects_stmt.close();
 				
 				JScrollPane scrollPane = new JScrollPane();
-				scrollPane.setBounds(10, 69, 414, 159);
+				scrollPane.setBounds(10, 69, 231, 159);
 				contentPane.add(scrollPane);
-				scrollPane.setViewportView(available_subjects);
+				scrollPane.setViewportView(subjectList);
+				
+				JScrollPane scrollPane_1 = new JScrollPane();
+				scrollPane_1.setBounds(251, 69, 173, 159);
+				contentPane.add(scrollPane_1);
+				
+				// SHOW SCHEDULES WHEN SELECTING A SUBJECT
+				JList<Schedule> scheduleList = new JList<>();
+				
+				subjectList.addListSelectionListener(new ListSelectionListener() {
+
+					@Override
+					public void valueChanged(ListSelectionEvent e) {
+						// TODO Auto-generated method stub
+						DefaultListModel<Schedule> scheduleModel = new DefaultListModel<>();
+						
+						try {
+							String subjectCode = subjectList.getSelectedValue().getCode();
+							String scheduleQuery = "SELECT schedule.schedule_time_start, schedule.schedule_time_end, schedule.schedule_day \r\n"
+									+ "FROM subject_schedule\r\n"
+									+ "INNER JOIN schedule ON schedule.schedule_id=subject_schedule.schedule_id\r\n"
+									+ "INNER JOIN subject ON subject.subject_id=subject_schedule.subject_id\r\n"
+									+ "WHERE subject.subject_code=?;";
+							PreparedStatement schedulePS = con.prepareStatement(scheduleQuery);
+							schedulePS.setString(1, subjectCode);
+							ResultSet scheduleResult = schedulePS.executeQuery();
+							
+							while (scheduleResult.next()) {	
+								String timeStart = scheduleResult.getString(1);
+								String timeEnd = scheduleResult.getString(2);
+								String day = scheduleResult.getString(3);
+								
+								scheduleModel.addElement(new Schedule(timeStart, timeEnd, day));
+							}
+							
+							scheduleResult.close();
+							schedulePS.close();
+						}
+						catch(SQLException ex) {
+							System.out.println(ex);
+						}
+						
+						scheduleList.setModel(scheduleModel);
+						scheduleList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);	
+					}
+					
+				});
+				
+				scrollPane_1.setViewportView(scheduleList);
+				
+				scheduleList.addListSelectionListener(new ListSelectionListener() {
+
+					@Override
+					public void valueChanged(ListSelectionEvent e) {
+						// TODO Auto-generated method stub
+						timeStart = scheduleList.getSelectedValue().getTimeStart();
+						timeEnd = scheduleList.getSelectedValue().getTimeEnd();
+						day = scheduleList.getSelectedValue().getDay();
+					}
+					
+				});
+				
+				
 	}
 }

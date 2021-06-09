@@ -62,9 +62,13 @@ public class StudentDashboard extends JFrame {
 		}
 		
 		//Get Student Subjects ID
-		String subjects_query = "SELECT subject.subject_code, subject.subject_name "
-				+ "FROM subject INNER JOIN student_subject "
-				+ "ON subject.subject_id=student_subject.subject_id "
+		String subjects_query = "SELECT \r\n"
+				+ "subject.subject_code, subject.subject_name, \r\n"
+				+ "schedule.schedule_time_start, schedule.schedule_time_end, schedule.schedule_day\r\n"
+				+ "FROM subject_schedule\r\n"
+				+ "INNER JOIN subject ON subject.subject_id=subject_schedule.subject_id\r\n"
+				+ "INNER JOIN schedule ON schedule.schedule_id=subject_schedule.schedule_id\r\n"
+				+ "INNER JOIN student_subject ON student_subject.subject_schedule_id=subject_schedule.subject_schedule_id\r\n"
 				+ "WHERE student_subject.student_id=?;";
 		PreparedStatement subjects_stmt = con.prepareStatement(subjects_query);
 		subjects_stmt.setInt(1, account_id);
@@ -73,28 +77,32 @@ public class StudentDashboard extends JFrame {
 		while (subjects_results.next()) {
 			String subject_code = subjects_results.getString(1);
 			String subject_name = subjects_results.getString(2);
+			String timeStart = subjects_results.getString(3);
+			String timeEnd = subjects_results.getString(4);
+			String day = subjects_results.getString(5);
 			
-			subjects.add(new Subject(subject_name, subject_code));
+			subjects.add(new Subject(subject_name, subject_code, new Schedule(timeStart, timeEnd, day)));
 		}
 		
-		Object columns[] = {"Subject Code", "Subject Name"};
+		Object columns[] = {"Subject Code", "Subject Name", "Schedule"};
 		Object rows[][];
 		
 		
 		if (subjects.size() > 0) {
-			rows = new Object[subjects.size()][2];
+			rows = new Object[subjects.size()][3];
 			
 			int i = 0;
 			for (Subject subject: subjects) {
 				rows[i][0] = subject.getCode();
 				rows[i][1] = subject.getName();
+				rows[i][2] = subject.getSchedule().toString();
 				i++;
 			}
 			
 			table = new JTable(rows, columns);
 		}
 		else {
-			rows = new Object[0][2];
+			rows = new Object[0][3];
 			table = new JTable(rows, columns);
 		}
 		
@@ -196,7 +204,7 @@ public class StudentDashboard extends JFrame {
 		table.getColumnModel().getColumn(0).setMinWidth(100);
 		table.getColumnModel().getColumn(0).setResizable(false);
 		table.getColumnModel().getColumn(1).setResizable(false);
-		table.getColumnModel().getColumn(1).setPreferredWidth(300);
-		table.getColumnModel().getColumn(1).setMinWidth(300);
+		table.getColumnModel().getColumn(1).setPreferredWidth(280);
+		table.getColumnModel().getColumn(1).setMinWidth(280);
 	}
 }
