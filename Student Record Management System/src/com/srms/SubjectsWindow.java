@@ -63,19 +63,16 @@ public class SubjectsWindow extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 
 					try {
-							String insert_query = "INSERT INTO student_subject(student_id, subject_schedule_id) VALUES (1, \r\n"
-									+ "	(SELECT subject_schedule.subject_schedule_id FROM subject_schedule \r\n"
-									+ "	INNER JOIN subject ON subject_schedule.subject_id=subject.subject_id\r\n"
-									+ "	INNER JOIN schedule ON subject_schedule.schedule_id=schedule.schedule_id\r\n"
-									+ "        WHERE subject.subject_code=?\r\n"
-									+ "        AND schedule.schedule_time_start=?\r\n"
-									+ "        AND schedule.schedule_time_end=?\r\n"
-									+ "        AND schedule.schedule_day=?));";
+							String insert_query = "INSERT INTO `student_subject`(`student_id`, `subject_id`, `schedule_id`) \r\n"
+									+ "VALUES (?,(SELECT subject.subject_id FROM subject WHERE subject.subject_code=?),\r\n"
+									+ "       (SELECT schedule.schedule_id FROM schedule WHERE schedule.schedule_time_start=?\r\n"
+									+ "       AND schedule.schedule_time_end=? AND schedule.schedule_day=?))";
 							PreparedStatement insert_stmt = con.prepareStatement(insert_query);
-							insert_stmt.setString(1, subjectList.getSelectedValue().getCode());
-							insert_stmt.setString(2, timeStart);
-							insert_stmt.setString(3, timeEnd);
-							insert_stmt.setString(4, day);
+							insert_stmt.setInt(1, account_id);
+							insert_stmt.setString(2, subjectList.getSelectedValue().getCode());
+							insert_stmt.setString(3, timeStart);
+							insert_stmt.setString(4, timeEnd);
+							insert_stmt.setString(5, day);
 							insert_stmt.executeUpdate();
 							
 							insert_stmt.close();
@@ -167,11 +164,11 @@ public class SubjectsWindow extends JFrame {
 						
 						try {
 							String subjectCode = subjectList.getSelectedValue().getCode();
-							String scheduleQuery = "SELECT schedule.schedule_time_start, schedule.schedule_time_end, schedule.schedule_day \r\n"
+							String scheduleQuery = "SELECT schedule.schedule_time_start, schedule.schedule_time_end, schedule.schedule_day\r\n"
 									+ "FROM subject_schedule\r\n"
 									+ "INNER JOIN schedule ON schedule.schedule_id=subject_schedule.schedule_id\r\n"
 									+ "INNER JOIN subject ON subject.subject_id=subject_schedule.subject_id\r\n"
-									+ "WHERE subject.subject_code=?;";
+									+ "WHERE subject.subject_id=(SELECT subject.subject_id FROM subject WHERE subject.subject_code=?);";
 							PreparedStatement schedulePS = con.prepareStatement(scheduleQuery);
 							schedulePS.setString(1, subjectCode);
 							ResultSet scheduleResult = schedulePS.executeQuery();

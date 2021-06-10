@@ -62,14 +62,12 @@ public class StudentDashboard extends JFrame {
 		}
 		
 		//Get Student Subjects ID
-		String subjects_query = "SELECT \r\n"
-				+ "subject.subject_code, subject.subject_name, \r\n"
-				+ "schedule.schedule_time_start, schedule.schedule_time_end, schedule.schedule_day\r\n"
-				+ "FROM subject_schedule\r\n"
-				+ "INNER JOIN subject ON subject.subject_id=subject_schedule.subject_id\r\n"
-				+ "INNER JOIN schedule ON schedule.schedule_id=subject_schedule.schedule_id\r\n"
-				+ "INNER JOIN student_subject ON student_subject.subject_schedule_id=subject_schedule.subject_schedule_id\r\n"
-				+ "WHERE student_subject.student_id=?;";
+		String subjects_query = "SELECT subject.subject_code, subject.subject_name, schedule.schedule_time_start, \r\n"
+				+ "schedule.schedule_time_end, schedule.schedule_day\r\n"
+				+ "FROM student_subject\r\n"
+				+ "INNER JOIN subject ON student_subject.subject_id=subject.subject_id\r\n"
+				+ "INNER JOIN schedule ON student_subject.schedule_id=schedule.schedule_id\r\n"
+				+ "WHERE student_subject.student_id=?";
 		PreparedStatement subjects_stmt = con.prepareStatement(subjects_query);
 		subjects_stmt.setInt(1, account_id);
 		ResultSet subjects_results = subjects_stmt.executeQuery();

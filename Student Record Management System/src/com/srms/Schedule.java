@@ -1,9 +1,14 @@
 package com.srms;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class Schedule {
 	String timeStart;
 	String timeEnd;
 	String day;
+	SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
 	
 	public Schedule(String timeStart, String timeEnd, String day) {
 		super();
@@ -39,7 +44,19 @@ public class Schedule {
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return timeStart + "/" + timeEnd + " " + day;
+	    Date timeStart = null;
+	    Date timeEnd = null;
+	    
+	    try {
+	        timeStart = sdf.parse(this.timeStart);
+	        timeEnd = sdf.parse(this.timeEnd);
+	    } catch (ParseException e) {
+	        e.printStackTrace();
+	    }
+	    String fTimeStart = sdf.format(timeStart);
+	    String fTimeEnd = sdf.format(timeEnd);
+
+		return fTimeStart + "/" + fTimeEnd + " " + day;
 	}
 	
 	
